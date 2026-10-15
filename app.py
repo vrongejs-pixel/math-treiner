@@ -1,6 +1,5 @@
 import streamlit as st
 import random
-import time
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Академия Юного Инженера — Имрон", page_icon="🚀", layout="centered")
@@ -17,48 +16,169 @@ def speak_voice(text):
     """
     st.components.v1.html(js_code, height=0)
 
-# Инициализация глобального состояния и таймеров блокировки (каждые 2 часа)
+# Инициализация глобального состояния и копилки
 if "state" not in st.session_state:
     st.session_state.state = {
         "earned_money": 0,
         "solved_total": 0,
         "correct_total": 0,
-        "marathon_last_success": None,  # Время последнего успешного марафона
-        "timed_mode_last_use": None    # Время последнего использования таймер-режима
+        "marathon_last_success": None,
+        "timed_mode_last_use": None
     }
 
 st.title("🚀 Академия юного инженера: ИМРОН")
-st.write("Привет, Имрон! Выбирай режим, зарабатывай сумы и прокачивай свой ум!")
+st.write("Привет, Имрон! Выбирай любой раздел, тренируй ум, решай задачи и зарабатывай сумы!")
 
-# Боковое меню
-mode = st.sidebar.selectbox("Выбери режим:", [
+# Боковое меню: возвращаем все простые разделы + марафон и таймер
+mode = st.sidebar.selectbox("Выбери раздел тренировки:", [
+    "✖️ Таблица умножения", 
+    "➕ Простая арифметика", 
+    "📖 Текстовые задачи", 
+    "🧠 Задачи для развития мышления",
     "🏆 Марафон 50 вопросов (Награда 5000 сум)", 
-    "⏱️ Умный режим с таймером (Награда 10000 сум, раз в 2 часа)", 
+    "⏱️ Режим с таймером (Награда 10000 сум, раз в 2 часа)", 
     "📊 Статистика и Копилка"
 ])
 
-# Текущее время для проверки 2-часовых интервалов
 now = datetime.now()
 
-# --- РЕЖИМ 1: МАРАФОН 50 ВОПРОСОВ ---
-if mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)":
-    st.header("🏆 Марафон: 50 вопросов без права на ошибку")
-    st.write("Пройди все 50 вопросов без единого промаха и получи 5000 сум в копилку! Каждые 10 правильных ответов тебя ждет голосовая поддержка.")
+# --- РЕЖИМ: Таблица умножения ---
+if mode == "✖️ Таблица умножения":
+    st.header("✖️ Тренировка таблицы умножения")
+    st.write("Свободный режим для оттачивания навыков умножения.")
     
-    # Проверка таймера для успешного марафона (раз в 2 часа после успеха)
+    if 'mult_q' not in st.session_state:
+        st.session_state.mult_q = None
+        st.session_state.mult_ans = None
+
+    if st.button("Следующий пример") or st.session_state.mult_q is None:
+        a = random.randint(2, 9)
+        b = random.randint(2, 9)
+        st.session_state.mult_q = f"{a} × {b}"
+        st.session_state.mult_ans = a * b
+
+    st.markdown(f"### Сколько будет: **{st.session_state.mult_q}**?")
+    user_ans = st.number_input("Твой ответ:", value=0, step=1, key="m_ans")
+
+    if st.button("Проверить ответ", key="check_mult"):
+        st.session_state.state["solved_total"] += 1
+        if user_ans == st.session_state.mult_ans:
+            st.session_state.state["correct_total"] += 1
+            st.success("Молодец, Имрон! Верно! 🌟")
+            speak_voice("Правильно, умница!")
+            st.session_state.mult_q = None
+        else:
+            st.error(f"Ошибка! Правильный ответ: {st.session_state.mult_ans}. Попробуй еще раз!")
+
+# --- РЕЖИМ: Простая арифметика ---
+elif mode == "➕ Простая арифметика":
+    st.header("➕ Простая арифметика (Сложение и вычитание)")
+    
+    if 'arith_q' not in st.session_state:
+        st.session_state.arith_q = None
+        st.session_state.arith_ans = None
+
+    if st.button("Новый пример") or st.session_state.arith_q is None:
+        op = random.choice(["+", "-"])
+        if op == "+":
+            a = random.randint(10, 99)
+            b = random.randint(10, 99)
+            st.session_state.arith_ans = a + b
+        else:
+            a = random.randint(20, 99)
+            b = random.randint(10, a)
+            st.session_state.arith_ans = a - b
+        st.session_state.arith_q = f"{a} {op} {b}"
+
+    st.markdown(f"### Сколько будет: **{st.session_state.arith_q}**?")
+    user_ans_a = st.number_input("Твой ответ:", value=0, step=1, key="a_ans")
+
+    if st.button("Проверить арифметику", key="check_arith"):
+        st.session_state.state["solved_total"] += 1
+        if user_ans_a == st.session_state.arith_ans:
+            st.session_state.state["correct_total"] += 1
+            st.success("Отлично, Имрон! Правильно! 👍")
+            speak_voice("Отлично!")
+            st.session_state.arith_q = None
+        else:
+            st.error(f"Неверно. Правильный ответ: {st.session_state.arith_ans}")
+
+# --- РЕЖИМ: Текстовые задачи ---
+elif mode == "📖 Текстовые задачи":
+    st.header("📖 Текстовые задачи")
+    
+    tasks_list = [
+        ("У Ирины было 4 коробки с карандашами, в каждой по 6 карандашей. Сколько всего карандашей у Ирины?", 24),
+        ("В гараже стояло 15 машин. Уехали 7 машин. Сколько машин осталось в гараже?", 8),
+        ("На трех полках стояло по 9 книг. Сколько всего книг на полках?", 27),
+        ("У Саши было 50 сумов. Он купил тетрадь за 18 сумов. Сколько денег осталось?", 32),
+        ("В автобусе ехало 28 пассажиров. На остановке зашло еще 14 человек. Сколько стало пассажиров?", 42)
+    ]
+    
+    if 'task_idx' not in st.session_state:
+        st.session_state.task_idx = random.randint(0, len(tasks_list) - 1)
+
+    current_task, current_answer = tasks_list[st.session_state.task_idx]
+    
+    st.markdown(f"**Задача:** {current_task}")
+    user_ans_t = st.number_input("Введите числовой ответ:", value=0, step=1, key="t_ans")
+
+    if st.button("Проверить задачу", key="check_task"):
+        st.session_state.state["solved_total"] += 1
+        if user_ans_t == current_answer:
+            st.session_state.state["correct_total"] += 1
+            st.success("Верно, Имрон! Отличная логика! 🧠")
+            speak_voice("Верно!")
+            st.session_state.task_idx = random.randint(0, len(tasks_list) - 1)
+        else:
+            st.error("Подумай еще раз! Внимательно перечитай условие.")
+
+# --- РЕЖИМ: Задачи для развития математического мышления ---
+elif mode == "🧠 Задачи для развития мышления":
+    st.header("🧠 Развитие математического мышления и логики")
+    st.write("Интересные нестандартные задачи для тренировки сообразительности.")
+    
+    logic_list = [
+        ("У отца 5 сыновей, и у каждого есть одна сестра. Сколько всего детей в семье?", 6),
+        ("Росли 3 березы. На каждой березе по 4 больших ветки. На каждой ветке по 2 яблока. Сколько всего яблок?", 0),
+        ("Два отца и два сына поймали 3 рыбы, и каждому досталось по одной рыбе. Как такое могло быть?", 3),
+        ("Патрульная машина проехала 20 км на север, потом 20 км на восток, потом 20 км на юг. Сколько километров до участка, если ехать напрямую? (Напишите число)", 20),
+        ("У бабушки жили внук Федя, кот Пушок, собака Дружок. Сколько всего ног у этих обитателей в доме?", 10) # 2+4+4 = 10
+    ]
+    
+    if 'logic_idx' not in st.session_state:
+        st.session_state.logic_idx = random.randint(0, len(logic_list) - 1)
+
+    c_task, c_ans = logic_list[st.session_state.logic_idx]
+    
+    st.markdown(f"**Логическая задачка:** {c_task}")
+    user_logic_ans = st.number_input("Ваш ответ (число):", value=0, step=1, key="logic_ans_val")
+
+    if st.button("Проверить логику", key="check_logic_btn"):
+        st.session_state.state["solved_total"] += 1
+        if user_logic_ans == c_ans:
+            st.session_state.state["correct_total"] += 1
+            st.success("Гениально! Ты отлично мыслишь логически! 🏆")
+            speak_voice("Ты умница, Имрон!")
+            st.session_state.logic_idx = random.randint(0, len(logic_list) - 1)
+        else:
+            st.error("Неправильно. Попробуй порассуждать по-другому!")
+
+# --- РЕЖИМ: Марафон 50 вопросов ---
+elif mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)":
+    st.header("🏆 Марафон: 50 вопросов без права на ошибку")
+    st.write("Пройди все 50 вопросов без единого промаха и получи 5000 сум! Каждые 10 вопросов — голосовая поддержка.")
+    
     can_play_marathon = True
-    marathon_wait_msg = ""
     if st.session_state.state["marathon_last_success"] is not None:
         time_passed = now - st.session_state.state["marathon_last_success"]
         if time_passed < timedelta(hours=2):
             remaining = timedelta(hours=2) - time_passed
             mins_left = int(remaining.total_seconds() // 60)
             can_play_marathon = False
-            marathon_wait_msg = f"⏳ Ты уже успешно прошел марафон! Следующая попытка откроется через {mins_left} минут (доступно раз в 2 часа)."
+            st.warning(f"⏳ Следующая попытка марафона откроется через {mins_left} минут (доступно раз в 2 часа после победы).")
 
-    if not can_play_marathon:
-        st.warning(marathon_wait_msg)
-    else:
+    if can_play_marathon:
         if 'm_active' not in st.session_state:
             st.session_state.m_active = False
             st.session_state.m_step = 1
@@ -85,21 +205,18 @@ if mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)
                 if user_m_ans == st.session_state.m_ans:
                     st.session_state.state["correct_total"] += 1
                     
-                    # Каждые 10 правильных ответов — напоминание голосом
                     if st.session_state.m_step in [10, 20, 30, 40]:
                         speak_voice("Ты заработал 1000 сум, так держать!")
-                        st.info(f"💡 Напоминание: Ты заработал 1000 сум за каждые 10 вопросов!")
+                        st.info("💡 Напоминание: Ты заработал 1000 сум за каждые 10 вопросов!")
 
                     if st.session_state.m_step >= 50:
-                        # Успешное завершение всего марафона
                         st.session_state.state["earned_money"] += 5000
                         st.session_state.state["marathon_last_success"] = now
                         speak_voice("Ты умница, Имрон! Марафон успешно пройден!")
-                        st.success("🎉 ПОЗДРАВЛЯЕМ! Ты прошел весь марафон без промахов и заработал 5000 сум! Запись добавлена в статистику.")
+                        st.success("🎉 ПОЗДРАВЛЯЕМ! Ты прошел весь марафон без промахов и заработал 5000 сум!")
                         st.session_state.m_active = False
                     else:
                         st.session_state.m_step += 1
-                        # Генерация следующего вопроса (микс умножения и арифметики)
                         if random.choice([True, False]):
                             a = random.randint(2, 9)
                             b = random.randint(2, 9)
@@ -116,17 +233,16 @@ if mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)
                                 st.session_state.m_ans = a - b
                         st.rerun()
                 else:
-                    st.error(f"❌ Ошибка на вопросе №{st.session_state.m_step}! Правильный ответ: {st.session_state.m_ans}. Марафон сброшен, но ты можешь начать его заново прямо сейчас!")
-                    speak_voice("Ничего страшного, Имрон, попробуй еще раз.")
+                    st.error(f"❌ Ошибка на вопросе №{st.session_state.m_step}! Правильный ответ: {st.session_state.m_ans}. Марафон сброшен.")
+                    speak_voice("Ничего страшного, попробуй еще раз.")
                     st.session_state.m_active = False
 
-# --- РЕЖИМ 2: ТАЙМЕР-РЕЖИМ (1 РАЗ В 2 ЧАСА, НАГРАДА 10000 СУМ) ---
-elif mode == "⏱️ Умный режим с таймером (Награда 10000 сум, раз в 2 часа)":
+# --- РЕЖИМ: Таймер-режим (1 раз в 2 часа) ---
+elif mode == "⏱️ Режим с таймером (Награда 10000 сум, раз в 2 часа)":
     st.header("⏱️ Интеллектуальный этап с защитой от перегрева")
-    st.info("💡 Этот режим можно запускать **только 1 раз в 2 часа**, чтобы мозг отдыхал. За успешное прохождение — награда **10 000 сум**!")
+    st.info("💡 Доступно **1 раз в 2 часа**. Награда за прохождение — **10 000 сум**!")
 
     can_play_timed = True
-    wait_msg = ""
     if st.session_state.state["timed_mode_last_use"] is not None:
         elapsed = now - st.session_state.state["timed_mode_last_use"]
         if elapsed < timedelta(hours=2):
@@ -134,11 +250,9 @@ elif mode == "⏱️ Умный режим с таймером (Награда 1
             h_l = int(left_time.total_seconds() // 3600)
             m_l = int((left_time.total_seconds() % 3600) // 60)
             can_play_timed = False
-            wait_msg = f"⏳ Мозг отдыхает! Этот режим будет доступен через {h_l} ч. {m_l} мин."
+            st.warning(f"⏳ Мозг отдыхает! Этот режим будет доступен через {h_l} ч. {m_l} мин.")
 
-    if not can_play_timed:
-        st.warning(wait_msg)
-    else:
+    if can_play_timed:
         if 't_started' not in st.session_state:
             st.session_state.t_started = False
             st.session_state.t_step = 1
@@ -166,11 +280,10 @@ elif mode == "⏱️ Умный режим с таймером (Награда 1
                     st.session_state.state["correct_total"] += 1
                     
                     if st.session_state.t_step >= 10:
-                        # Успешно пройден таймер-режим
                         st.session_state.state["earned_money"] += 10000
                         st.session_state.state["timed_mode_last_use"] = now
                         speak_voice("Ты умница, Имрон! Сеанс с таймером пройден, ты заработал 10 тысяч сум!")
-                        st.success("🏆 Великолепно! Ты успешно завершил этап с таймером и заработал 10 000 сум в копилку! Следующий сеанс откроется через 2 часа.")
+                        st.success("🏆 Великолепно! Ты успешно завершил этап с таймером и заработал 10 000 сум!")
                         st.session_state.t_started = False
                     else:
                         st.session_state.t_step += 1
@@ -184,13 +297,12 @@ elif mode == "⏱️ Умный режим с таймером (Награда 1
                             st.session_state.t_ans = a - b
                         st.rerun()
                 else:
-                    st.error("❌ Ошибка! Таймер-режим прерван. Попробуй еще раз, когда отдохнешь.")
+                    st.error("❌ Ошибка! Таймер-режим прерван.")
                     st.session_state.t_started = False
 
-# --- РЕЖИМ 3: СТАТИСТИКА И КОПИЛКА ---
+# --- РЕЖИМ: Статистика и Копилка ---
 elif mode == "📊 Статистика и Копилка":
     st.header("📊 Статистика успехов Имрона")
-    st.write("Здесь отображается общая копилка и результаты выполненных заданий.")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -200,8 +312,4 @@ elif mode == "📊 Статистика и Копилка":
     with col3:
         st.metric(label="💰 Общая копилка", value=f"{st.session_state.state['earned_money']} сум")
         
-    st.info("💡 **Как устроены стимулы:**\n- Марафон (50 вопросов): приносит **5000 сум** при успешном прохождении. При ошибке можно повторять бесконечно, а при успехе — повторять каждые 2 часа. Каждые 10 вопросов озвучивается бонус 1000 сум.\n- Режим с таймером: приносит **10 000 сум**, защищает мозг от перегрузки и доступен ровно 1 раз в 2 часа!")
-   
-                     
-                   
-           
+    st.info("💡 В приложении доступны как свободные тренировочные разделы (умножение, арифметика, задачи, мышление), так и премиум-марафоны с наградами!")
