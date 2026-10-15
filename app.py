@@ -29,14 +29,14 @@ if "state" not in st.session_state:
 st.title("🚀 Академия юного инженера: ИМРОН")
 st.write("Привет, Имрон! Выбирай любой раздел, тренируй ум, решай задачи и зарабатывай сумы!")
 
-# Боковое меню: возвращаем все простые разделы + марафон и таймер
+# Боковое меню: все разделы
 mode = st.sidebar.selectbox("Выбери раздел тренировки:", [
     "✖️ Таблица умножения", 
     "➕ Простая арифметика", 
     "📖 Текстовые задачи", 
     "🧠 Задачи для развития мышления",
     "🏆 Марафон 50 вопросов (Награда 5000 сум)", 
-    "⏱️ Режим с таймером (Награда 10000 сум, раз в 2 часа)", 
+    "⏱️ Спринт с таймером (7 примеров за 2 мин, Награда 10000 сум)", 
     "📊 Статистика и Копилка"
 ])
 
@@ -45,7 +45,6 @@ now = datetime.now()
 # --- РЕЖИМ: Таблица умножения ---
 if mode == "✖️ Таблица умножения":
     st.header("✖️ Тренировка таблицы умножения")
-    st.write("Свободный режим для оттачивания навыков умножения.")
     
     if 'mult_q' not in st.session_state:
         st.session_state.mult_q = None
@@ -136,14 +135,13 @@ elif mode == "📖 Текстовые задачи":
 # --- РЕЖИМ: Задачи для развития математического мышления ---
 elif mode == "🧠 Задачи для развития мышления":
     st.header("🧠 Развитие математического мышления и логики")
-    st.write("Интересные нестандартные задачи для тренировки сообразительности.")
     
     logic_list = [
         ("У отца 5 сыновей, и у каждого есть одна сестра. Сколько всего детей в семье?", 6),
         ("Росли 3 березы. На каждой березе по 4 больших ветки. На каждой ветке по 2 яблока. Сколько всего яблок?", 0),
         ("Два отца и два сына поймали 3 рыбы, и каждому досталось по одной рыбе. Как такое могло быть?", 3),
-        ("Патрульная машина проехала 20 км на север, потом 20 км на восток, потом 20 км на юг. Сколько километров до участка, если ехать напрямую? (Напишите число)", 20),
-        ("У бабушки жили внук Федя, кот Пушок, собака Дружок. Сколько всего ног у этих обитателей в доме?", 10) # 2+4+4 = 10
+        ("Патрульная машина проехала 20 км на север, потом 20 км на восток, потом 20 км на юг. Сколько километров до участка? (число)", 20),
+        ("У бабушки жили внук Федя, кот Пушок, собака Дружок. Сколько всего ног у этих обитателей в доме?", 10)
     ]
     
     if 'logic_idx' not in st.session_state:
@@ -237,68 +235,79 @@ elif mode == "🏆 Марафон 50 вопросов (Награда 5000 су�
                     speak_voice("Ничего страшного, попробуй еще раз.")
                     st.session_state.m_active = False
 
-# --- РЕЖИМ: Таймер-режим (1 раз в 2 часа) ---
-elif mode == "⏱️ Режим с таймером (Награда 10000 сум, раз в 2 часа)":
-    st.header("⏱️ Интеллектуальный этап с защитой от перегрева")
-    st.info("💡 Доступно **1 раз в 2 часа**. Награда за прохождение — **10 000 сум**!")
+# --- РЕЖИМ: Спринт с таймером (7 примеров за 2 минуты, раз в 2 часа) ---
+elif mode == "⏱️ Спринт с таймером (7 примеров за 2 мин, Награда 10000 сум)":
+    st.header("⏱️ Спринт с таймером (Оптимальная нагрузка)")
+    st.info("💡 Задача: решить **7 примеров ровно за 2 минуты (120 секунд)**. Доступно **1 раз в 2 часа**, награда — **10 000 сум**!")
 
-    can_play_timed = True
+    can_play_sprint = True
     if st.session_state.state["timed_mode_last_use"] is not None:
         elapsed = now - st.session_state.state["timed_mode_last_use"]
         if elapsed < timedelta(hours=2):
             left_time = timedelta(hours=2) - elapsed
             h_l = int(left_time.total_seconds() // 3600)
             m_l = int((left_time.total_seconds() % 3600) // 60)
-            can_play_timed = False
-            st.warning(f"⏳ Мозг отдыхает! Этот режим будет доступен через {h_l} ч. {m_l} мин.")
+            can_play_sprint = False
+            st.warning(f"⏳ Мозг отдыхает! Спринт будет доступен через {h_l} ч. {m_l} мин.")
 
-    if can_play_timed:
-        if 't_started' not in st.session_state:
-            st.session_state.t_started = False
-            st.session_state.t_step = 1
-            st.session_state.t_q = None
-            st.session_state.t_ans = None
+    if can_play_sprint:
+        if 'sprint_active' not in st.session_state:
+            st.session_state.sprint_active = False
+            st.session_state.s_step = 1
+            st.session_state.s_start_time = None
+            st.session_state.s_q = None
+            st.session_state.s_ans = None
 
-        if not st.session_state.t_started:
-            if st.button("🚀 Начать сеанс (10 000 сум)"):
-                st.session_state.t_started = True
-                st.session_state.t_step = 1
+        if not st.session_state.sprint_active:
+            if st.button("🚀 Начать Спринт (7 примеров / 2 мин)"):
+                st.session_state.sprint_active = True
+                st.session_state.s_step = 1
+                st.session_state.s_start_time = time.time()
                 a = random.randint(10, 50)
                 b = random.randint(10, 50)
-                st.session_state.t_q = f"{a} + {b}"
-                st.session_state.t_ans = a + b
+                st.session_state.s_q = f"{a} + {b}"
+                st.session_state.s_ans = a + b
                 st.rerun()
         else:
-            st.markdown(f"### Этап с таймером: Вопрос {st.session_state.t_step} из 10")
-            st.markdown(f"**Сколько будет: {st.session_state.t_q}**?")
+            # Проверка времени (120 секунд = 2 минуты)
+            elapsed_sec = time.time() - st.session_state.s_start_time
+            time_left = max(0, 120 - int(elapsed_sec))
             
-            user_t_ans = st.number_input("Твой ответ:", value=0, step=1, key="timed_input_val")
-            
-            if st.button("Проверить таймер-вопрос"):
-                st.session_state.state["solved_total"] += 1
-                if user_t_ans == st.session_state.t_ans:
-                    st.session_state.state["correct_total"] += 1
-                    
-                    if st.session_state.t_step >= 10:
-                        st.session_state.state["earned_money"] += 10000
-                        st.session_state.state["timed_mode_last_use"] = now
-                        speak_voice("Ты умница, Имрон! Сеанс с таймером пройден, ты заработал 10 тысяч сум!")
-                        st.success("🏆 Великолепно! Ты успешно завершил этап с таймером и заработал 10 000 сум!")
-                        st.session_state.t_started = False
-                    else:
-                        st.session_state.t_step += 1
-                        a = random.randint(20, 99)
-                        b = random.randint(10, 50)
-                        if random.choice([True, False]):
-                            st.session_state.t_q = f"{a} + {b}"
-                            st.session_state.t_ans = a + b
+            if time_left == 0:
+                st.error("⏰ Время вышло! Спринт прерван. Отдохни и попробуй в следующий раз.")
+                speak_voice("Время вышло, ничего страшного.")
+                st.session_state.sprint_active = False
+            else:
+                st.markdown(f"### ⏱️ Осталось времени: **{time_left} сек.** | Пример {st.session_state.s_step} из 7")
+                st.markdown(f"**Сколько будет: {st.session_state.s_q}**?")
+                
+                user_s_ans = st.number_input("Твой ответ:", value=0, step=1, key="sprint_input_val")
+                
+                if st.button("Ответить на спринт"):
+                    st.session_state.state["solved_total"] += 1
+                    if user_s_ans == st.session_state.s_ans:
+                        st.session_state.state["correct_total"] += 1
+                        
+                        if st.session_state.s_step >= 7:
+                            st.session_state.state["earned_money"] += 10000
+                            st.session_state.state["timed_mode_last_use"] = now
+                            speak_voice("Ты умница, Имрон! Спринт успешно пройден, ты заработал 10 тысяч сум!")
+                            st.success("🏆 Блестяще! Ты успел решить 7 примеров за 2 минуты и заработал 10 000 сум!")
+                            st.session_state.sprint_active = False
                         else:
-                            st.session_state.t_q = f"{a} - {b}"
-                            st.session_state.t_ans = a - b
-                        st.rerun()
-                else:
-                    st.error("❌ Ошибка! Таймер-режим прерван.")
-                    st.session_state.t_started = False
+                            st.session_state.s_step += 1
+                            a = random.randint(15, 60)
+                            b = random.randint(10, 40)
+                            if random.choice([True, False]):
+                                st.session_state.s_q = f"{a} + {b}"
+                                st.session_state.s_ans = a + b
+                            else:
+                                st.session_state.s_q = f"{a} - {b}"
+                                st.session_state.s_ans = a - b
+                            st.rerun()
+                    else:
+                        st.error("❌ Ошибка! Спринт прерван из-за неверного ответа.")
+                        st.session_state.sprint_active = False
 
 # --- РЕЖИМ: Статистика и Копилка ---
 elif mode == "📊 Статистика и Копилка":
@@ -312,4 +321,4 @@ elif mode == "📊 Статистика и Копилка":
     with col3:
         st.metric(label="💰 Общая копилка", value=f"{st.session_state.state['earned_money']} сум")
         
-    st.info("💡 В приложении доступны как свободные тренировочные разделы (умножение, арифметика, задачи, мышление), так и премиум-марафоны с наградами!")
+    st.info("💡 Имрон может свободно заниматься в любых разделах, проходить марафон на 50 вопросов и соревноваться в спринте с таймером (7 примеров за 2 минуты) раз в 2 часа для безопасной тренировки мозга!")
