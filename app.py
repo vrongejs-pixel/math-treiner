@@ -58,18 +58,22 @@ if mode == "✖️ Таблица умножения":
         st.session_state.mult_ans = a * b
 
     st.markdown(f"### Сколько будет: **{st.session_state.mult_q}**?")
-    user_ans = st.number_input("Твой ответ:", value=0, step=1, key="m_ans")
+    user_ans_str = st.text_input("Твой ответ:", value="", key="m_ans_clean")
 
     if st.button("Проверить ответ", key="check_mult"):
-        st.session_state.state["solved_total"] += 1
-        if user_ans == st.session_state.mult_ans:
-            st.session_state.state["correct_total"] += 1
-            st.success("Молодец, Имрон! Верно! 🌟")
-            speak_voice("Правильно, умница!")
-            st.session_state.mult_q = None
-            st.rerun()
+        if user_ans_str.strip().isdigit():
+            user_ans = int(user_ans_str.strip())
+            st.session_state.state["solved_total"] += 1
+            if user_ans == st.session_state.mult_ans:
+                st.session_state.state["correct_total"] += 1
+                st.success("Молодец, Имрон! Верно! 🌟")
+                speak_voice("Правильно, умница!")
+                st.session_state.mult_q = None
+                st.rerun()
+            else:
+                st.error(f"Ошибка! Правильный ответ: {st.session_state.mult_ans}. Попробуй еще раз!")
         else:
-            st.error(f"Ошибка! Правильный ответ: {st.session_state.mult_ans}. Попробуй еще раз!")
+            st.warning("Пожалуйста, введи число!")
 
 # --- РЕЖИМ: Простая арифметика ---
 elif mode == "➕ Простая арифметика":
@@ -92,18 +96,24 @@ elif mode == "➕ Простая арифметика":
         st.session_state.arith_q = f"{a} {op} {b}"
 
     st.markdown(f"### Сколько будет: **{st.session_state.arith_q}**?")
-    user_ans_a = st.number_input("Твой ответ:", value=0, step=1, key="a_ans")
+    user_ans_a_str = st.text_input("Твой ответ:", value="", key="a_ans_clean")
 
     if st.button("Проверить арифметику", key="check_arith"):
-        st.session_state.state["solved_total"] += 1
-        if user_ans_a == st.session_state.arith_ans:
-            st.session_state.state["correct_total"] += 1
-            st.success("Отлично, Имрон! Правильно! 👍")
-            speak_voice("Отлично!")
-            st.session_state.arith_q = None
-            st.rerun()
+        # Поддержка отрицательных чисел на случай вычитания
+        val_clean = user_ans_a_str.strip().replace(" ", "")
+        if val_clean.lstrip('-').isdigit():
+            user_ans_a = int(val_clean)
+            st.session_state.state["solved_total"] += 1
+            if user_ans_a == st.session_state.arith_ans:
+                st.session_state.state["correct_total"] += 1
+                st.success("Отлично, Имрон! Правильно! 👍")
+                speak_voice("Отлично!")
+                st.session_state.arith_q = None
+                st.rerun()
+            else:
+                st.error(f"Неверно. Правильный ответ: {st.session_state.arith_ans}")
         else:
-            st.error(f"Неверно. Правильный ответ: {st.session_state.arith_ans}")
+            st.warning("Пожалуйста, введи число!")
 
 # --- РЕЖИМ: Текстовые задачи ---
 elif mode == "📖 Текстовые задачи":
@@ -123,18 +133,23 @@ elif mode == "📖 Текстовые задачи":
     current_task, current_answer = tasks_list[st.session_state.task_idx]
     
     st.markdown(f"**Задача:** {current_task}")
-    user_ans_t = st.number_input("Введите числовой ответ:", value=0, step=1, key="t_ans")
+    user_ans_t_str = st.text_input("Введите числовой ответ:", value="", key="t_ans_clean")
 
     if st.button("Проверить задачу", key="check_task"):
-        st.session_state.state["solved_total"] += 1
-        if user_ans_t == current_answer:
-            st.session_state.state["correct_total"] += 1
-            st.success("Верно, Имрон! Отличная логика! 🧠")
-            speak_voice("Верно!")
-            st.session_state.task_idx = random.randint(0, len(tasks_list) - 1)
-            st.rerun()
+        val_clean = user_ans_t_str.strip()
+        if val_clean.lstrip('-').isdigit():
+            user_ans_t = int(val_clean)
+            st.session_state.state["solved_total"] += 1
+            if user_ans_t == current_answer:
+                st.session_state.state["correct_total"] += 1
+                st.success("Верно, Имрон! Отличная логика! 🧠")
+                speak_voice("Верно!")
+                st.session_state.task_idx = random.randint(0, len(tasks_list) - 1)
+                st.rerun()
+            else:
+                st.error("Подумай еще раз! Внимательно перечитай условие.")
         else:
-            st.error("Подумай еще раз! Внимательно перечитай условие.")
+            st.warning("Пожалуйста, введи число!")
 
 # --- РЕЖИМ: Задачи для развития математического мышления ---
 elif mode == "🧠 Задачи для развития мышления":
@@ -154,18 +169,23 @@ elif mode == "🧠 Задачи для развития мышления":
     c_task, c_ans = logic_list[st.session_state.logic_idx]
     
     st.markdown(f"**Логическая задачка:** {c_task}")
-    user_logic_ans = st.number_input("Ваш ответ (число):", value=0, step=1, key="logic_ans_val")
+    user_logic_str = st.text_input("Ваш ответ (число):", value="", key="logic_ans_clean")
 
     if st.button("Проверить логику", key="check_logic_btn"):
-        st.session_state.state["solved_total"] += 1
-        if user_logic_ans == c_ans:
-            st.session_state.state["correct_total"] += 1
-            st.success("Гениально! Ты отлично мыслишь логически! 🏆")
-            speak_voice("Ты умница, Имрон!")
-            st.session_state.logic_idx = random.randint(0, len(logic_list) - 1)
-            st.rerun()
+        val_clean = user_logic_str.strip()
+        if val_clean.lstrip('-').isdigit():
+            user_logic_ans = int(val_clean)
+            st.session_state.state["solved_total"] += 1
+            if user_logic_ans == c_ans:
+                st.session_state.state["correct_total"] += 1
+                st.success("Гениально! Ты отлично мыслишь логически! 🏆")
+                speak_voice("Ты умница, Имрон!")
+                st.session_state.logic_idx = random.randint(0, len(logic_list) - 1)
+                st.rerun()
+            else:
+                st.error("Неправильно. Попробуй порассуждать по-другому!")
         else:
-            st.error("Неправильно. Попробуй порассуждать по-другому!")
+            st.warning("Пожалуйста, введи число!")
 
 # --- РЕЖИМ: Марафон 50 вопросов ---
 elif mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)":
@@ -201,46 +221,51 @@ elif mode == "🏆 Марафон 50 вопросов (Награда 5000 су�
             st.markdown(f"### Вопрос № {st.session_state.m_step} из 50")
             st.markdown(f"**Сколько будет: {st.session_state.m_q}**?")
             
-            user_m_ans = st.number_input("Твой ответ:", value=0, step=1, key=f"m_input_{st.session_state.m_step}")
+            user_m_str = st.text_input("Твой ответ:", value="", key=f"m_input_clean_{st.session_state.m_step}")
             
             if st.button("Ответить"):
-                st.session_state.state["solved_total"] += 1
-                if user_m_ans == st.session_state.m_ans:
-                    st.session_state.state["correct_total"] += 1
-                    
-                    if st.session_state.m_step in [10, 20, 30, 40]:
-                        speak_voice("Ты заработал 1000 сум, так держать!")
-                        st.info("💡 Напоминание: Ты заработал 1000 сум за каждые 10 вопросов!")
+                val_clean = user_m_str.strip()
+                if val_clean.lstrip('-').isdigit():
+                    user_m_ans = int(val_clean)
+                    st.session_state.state["solved_total"] += 1
+                    if user_m_ans == st.session_state.m_ans:
+                        st.session_state.state["correct_total"] += 1
+                        
+                        if st.session_state.m_step in [10, 20, 30, 40]:
+                            speak_voice("Ты заработал 1000 сум, так держать!")
+                            st.info("💡 Напоминание: Ты заработал 1000 сум за каждые 10 вопросов!")
 
-                    if st.session_state.m_step >= 50:
-                        st.session_state.state["earned_money"] += 5000
-                        st.session_state.state["marathon_last_success"] = now
-                        speak_voice("Ты умница, Имрон! Марафон успешно пройден!")
-                        st.success("🎉 ПОЗДРАВЛЯЕМ! Ты прошел весь марафон без промахов и заработал 5000 сум!")
-                        st.session_state.m_active = False
-                    else:
-                        st.session_state.m_step += 1
-                        if random.choice([True, False]):
-                            a = random.randint(2, 9)
-                            b = random.randint(2, 9)
-                            st.session_state.m_q = f"{a} × {b}"
-                            st.session_state.m_ans = a * b
+                        if st.session_state.m_step >= 50:
+                            st.session_state.state["earned_money"] += 5000
+                            st.session_state.state["marathon_last_success"] = now
+                            speak_voice("Ты умница, Имрон! Марафон успешно пройден!")
+                            st.success("🎉 ПОЗДРАВЛЯЕМ! Ты прошел весь марафон без промахов и заработал 5000 сум!")
+                            st.session_state.m_active = False
                         else:
-                            a = random.randint(15, 50)
-                            b = random.randint(10, 40)
+                            st.session_state.m_step += 1
                             if random.choice([True, False]):
-                                st.session_state.m_q = f"{a} + {b}"
-                                st.session_state.m_ans = a + b
+                                a = random.randint(2, 9)
+                                b = random.randint(2, 9)
+                                st.session_state.m_q = f"{a} × {b}"
+                                st.session_state.m_ans = a * b
                             else:
-                                st.session_state.m_q = f"{a} - {b}"
-                                st.session_state.m_ans = a - b
-                        st.rerun()
+                                a = random.randint(15, 50)
+                                b = random.randint(10, 40)
+                                if random.choice([True, False]):
+                                    st.session_state.m_q = f"{a} + {b}"
+                                    st.session_state.m_ans = a + b
+                                else:
+                                    st.session_state.m_q = f"{a} - {b}"
+                                    st.session_state.m_ans = a - b
+                            st.rerun()
+                    else:
+                        st.error(f"❌ Ошибка на вопросе №{st.session_state.m_step}! Правильный ответ: {st.session_state.m_ans}. Марафон сброшен.")
+                        speak_voice("Ничего страшного, попробуй еще раз.")
+                        st.session_state.m_active = False
                 else:
-                    st.error(f"❌ Ошибка на вопросе №{st.session_state.m_step}! Правильный ответ: {st.session_state.m_ans}. Марафон сброшен.")
-                    speak_voice("Ничего страшного, попробуй еще раз.")
-                    st.session_state.m_active = False
+                    st.warning("Пожалуйста, введи число!")
 
-# --- РЕЖИМ: Спринт с таймером и живыми секундами ---
+# --- РЕЖИМ: Спринт с таймером и чистым полем ввода ---
 elif mode == "⏱️ Спринт с таймером (7 примеров, Награда 10000 сум)":
     st.header("⏱️ Спринт с таймером (Оптимальная нагрузка)")
     st.info("💡 Задача: решить **7 примеров за 2 минуты (120 секунд)**. Доступно **1 раз в 2 часа**, награда — **10 000 сум**!")
@@ -274,7 +299,6 @@ elif mode == "⏱️ Спринт с таймером (7 примеров, На�
                 st.session_state.s_ans = a + b
                 st.rerun()
         else:
-            # Расчет оставшегося времени (120 секунд)
             elapsed_sec = time.time() - st.session_state.s_start_time
             time_left = max(0, 120 - int(elapsed_sec))
             
@@ -283,38 +307,42 @@ elif mode == "⏱️ Спринт с таймером (7 примеров, На�
                 speak_voice("Время вышло, ничего страшного.")
                 st.session_state.sprint_active = False
             else:
-                # Выводим на экран красивый таймер
                 st.markdown(f"### ⏱️ Осталось времени: **{time_left} сек.** | Пример {st.session_state.s_step} из 7")
                 st.markdown(f"**Сколько будет: {st.session_state.s_q}**?")
                 
-                # Уникальный ключ очищает поле при смене вопроса
-                user_s_ans = st.number_input("Твой ответ:", value=0, step=1, key=f"sprint_step_{st.session_state.s_step}")
+                # Чистое текстовое поле без нулей
+                user_s_str = st.text_input("Твой ответ:", value="", key=f"sprint_step_clean_{st.session_state.s_step}")
                 
                 if st.button("Ответить на спринт"):
-                    st.session_state.state["solved_total"] += 1
-                    if user_s_ans == st.session_state.s_ans:
-                        st.session_state.state["correct_total"] += 1
-                        
-                        if st.session_state.s_step >= 7:
-                            st.session_state.state["earned_money"] += 10000
-                            st.session_state.state["timed_mode_last_use"] = now
-                            speak_voice("Ты умница, Имрон! Спринт успешно пройден, ты заработал 10 тысяч сум!")
-                            st.success("🏆 Блестяще! Ты успел решить 7 примеров вовремя и заработал 10 000 сум!")
-                            st.session_state.sprint_active = False
-                        else:
-                            st.session_state.s_step += 1
-                            a = random.randint(15, 60)
-                            b = random.randint(10, 40)
-                            if random.choice([True, False]):
-                                st.session_state.s_q = f"{a} + {b}"
-                                st.session_state.s_ans = a + b
+                    val_clean = user_s_str.strip()
+                    if val_clean.lstrip('-').isdigit():
+                        user_s_ans = int(val_clean)
+                        st.session_state.state["solved_total"] += 1
+                        if user_s_ans == st.session_state.s_ans:
+                            st.session_state.state["correct_total"] += 1
+                            
+                            if st.session_state.s_step >= 7:
+                                st.session_state.state["earned_money"] += 10000
+                                st.session_state.state["timed_mode_last_use"] = now
+                                speak_voice("Ты умница, Имрон! Спринт успешно пройден, ты заработал 10 тысяч сум!")
+                                st.success("🏆 Блестяще! Ты успел решить 7 примеров вовремя и заработал 10 000 сум!")
+                                st.session_state.sprint_active = False
                             else:
-                                st.session_state.s_q = f"{a} - {b}"
-                                st.session_state.s_ans = a - b
-                            st.rerun()
+                                st.session_state.s_step += 1
+                                a = random.randint(15, 60)
+                                b = random.randint(10, 40)
+                                if random.choice([True, False]):
+                                    st.session_state.s_q = f"{a} + {b}"
+                                    st.session_state.s_ans = a + b
+                                else:
+                                    st.session_state.s_q = f"{a} - {b}"
+                                    st.session_state.s_ans = a - b
+                                st.rerun()
+                        else:
+                            st.error("❌ Ошибка! Спринт прерван из-за неверного ответа.")
+                            st.session_state.sprint_active = False
                     else:
-                        st.error("❌ Ошибка! Спринт прерван из-за неверного ответа.")
-                        st.session_state.sprint_active = False
+                        st.warning("Пожалуйста, введи число!")
 
 # --- РЕЖИМ: Статистика и Копилка ---
 elif mode == "📊 Статистика и Копилка":
