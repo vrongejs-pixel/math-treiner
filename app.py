@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import json
+import os
 import random
 import time
 import streamlit as st
@@ -7,8 +9,83 @@ st.set_page_config(
     page_title="Академия Юного Инженера — Имрон", page_icon="🚀", layout="centered"
 )
 
+# --- ЖЕЛЕЗОБЕТОННОЕ СОХРАНЕНИЕ (Файл на сервере, чтобы копилка никогда не пропадала) ---
+DATA_FILE = "imron_data.json"
 
-# Функция голосовой озвучки в браузере
+
+def load_data():
+  if os.path.exists(DATA_FILE):
+    try:
+      with open(DATA_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        for item in data.get("earnings_history", []):
+          item["date"] = datetime.fromisoformat(item["date"])
+        return data
+    except Exception:
+      pass
+  return {
+      "solved_total": 0,
+      "correct_total": 0,
+      "mult_correct_count": 0,
+      "arith_correct_count": 0,
+      "text_correct_count": 0,
+      "mult_money": 0,
+      "arith_money": 0,
+      "text_money": 0,
+      "logic_money": 0,
+      "marathon_money": 0,
+      "sprint_money": 0,
+      "logic_solved_ids": [],
+      "text_solved_ids": [],
+      "marathon_last_success": None,
+      "timed_mode_last_use": None,
+      "earnings_history": [],
+  }
+
+
+def save_data():
+  data_to_save = st.session_state.state.copy()
+  formatted_history = []
+  for item in data_to_save["earnings_history"]:
+    formatted_history.append({
+        "date": item["date"].isoformat(),
+        "amount": item["amount"],
+        "source": item["source"],
+    })
+  data_to_save["earnings_history"] = formatted_history
+
+  if data_to_save["marathon_last_success"]:
+    data_to_save["marathon_last_success"] = data_to_save[
+        "marathon_last_success"
+    ].isoformat()
+  if data_to_save["timed_mode_last_use"]:
+    data_to_save["timed_mode_last_use"] = data_to_save[
+        "timed_mode_last_use"
+    ].isoformat()
+
+  with open(DATA_FILE, "w", encoding="utf-8") as f:
+    json.dump(data_to_save, f, ensure_ascii=False, indent=4)
+
+
+if "state" not in st.session_state:
+  loaded = load_data()
+  if loaded.get("marathon_last_success"):
+    try:
+      loaded["marathon_last_success"] = datetime.fromisoformat(
+          loaded["marathon_last_success"]
+      )
+    except:
+      loaded["marathon_last_success"] = None
+  if loaded.get("timed_mode_last_use"):
+    try:
+      loaded["timed_mode_last_use"] = datetime.fromisoformat(
+          loaded["timed_mode_last_use"]
+      )
+    except:
+      loaded["timed_mode_last_use"] = None
+  st.session_state.state = loaded
+
+
 def speak_voice(text):
   js_code = f"""
     <script>
@@ -21,39 +98,17 @@ def speak_voice(text):
   st.components.v1.html(js_code, height=0)
 
 
-# Инициализация глобального состояния и раздельных копилок (данные не стираются навсегда)
-if "state" not in st.session_state:
-  st.session_state.state = {
-      "solved_total": 0,
-      "correct_total": 0,
-      # Раздельные счетчики правильных ответов для накопительной системы (цель: 25)
-      "mult_correct_count": 0,
-      "arith_correct_count": 0,
-      "text_correct_count": 0,
-      # Раздельные копилки (деньги)
-      "mult_money": 0,
-      "arith_money": 0,
-      "text_money": 0,
-      "logic_money": 0,
-      "marathon_money": 0,
-      "sprint_money": 0,
-      # Списки решенных задач для исключения повторов
-      "logic_solved_ids": [],
-      "text_solved_ids": [],
-      "marathon_last_success": None,
-      "timed_mode_last_use": None,
-  }
-
 st.title("🚀 Академия юного инженера: ИМРОН")
 st.write(
     "Привет, Имрон! Выбирай любой раздел, тренируй ум, решай задачи и зарабатывай"
     " сумы!"
 )
 
-# Боковое меню: все разделы
+# Боковое меню: все разделы (включая Школу счета)
 mode = st.sidebar.selectbox(
     "Выбери раздел тренировки:",
     [
+        "📚 Школа юного инженера (Уроки и лайфхаки счета)",
         "✖️ Таблица умножения",
         "➕ Простая арифметика",
         "📖 Текстовые задачи",
@@ -66,7 +121,14 @@ mode = st.sidebar.selectbox(
 
 now = datetime.now()
 
-# Общая функция для проверки накопительного прогресса (25 правильных = 1000 сум)
+
+def add_earnings(amount, source_name):
+  st.session_state.state["earnings_history"].append(
+      {"date": datetime.now(), "amount": amount, "source": source_name}
+  )
+  save_data()
+
+
 def process_reward(section_key_correct, section_key_money, section_name):
   st.session_state.state[section_key_correct] += 1
   current_count = st.session_state.state[section_key_correct]
@@ -75,19 +137,73 @@ def process_reward(section_key_correct, section_key_money, section_name):
 
   if remainder == 0:
     st.session_state.state[section_key_money] += 1000
+    add_earnings(1000, f"Награда 25 ответов ({section_name})")
     msg = f"Ура! Ты собрал 25 правильных ответов в разделе {section_name} и заработал 1000 сум!"
     st.success(f"🎉 {msg}")
     speak_voice(msg)
   else:
+    save_data()
     msg = f"Ты в пути к заработку 1000 сум. Тебе осталось решить еще {left_to_reward} правильных примеров в разделе {section_name}!"
     st.info(f"💡 {msg}")
     speak_voice(f"Тебе осталось решить еще {left_to_reward} примеров до награды!")
 
 
+# --- РЕЖИМ: Школа юного инженера (Уроки счета в уме) ---
+if mode == "📚 Школа юного инженера (Уроки и лайфхаки счета)":
+  st.header("📚 Школа юного инженера: Секреты быстрого счета в уме")
+  st.write(
+      "Привет, Имрон! Здесь собраны самые крутые и легкие методы, которые"
+      " помогут тебе считать быстрее компьютера и без ошибок!"
+  )
+
+  st.markdown("---")
+  st.subheader("💡 Урок 1: Как легко складывать двузначные числа в уме")
+  st.write(
+      "**Метод поразрядного сложения:** Сначала складывай десятки, а потом"
+      " единицы!"
+  )
+  st.info(
+      "**Пример:** `47 + 32`\n"
+      "1. Складываем десятки: `40 + 30 = 70`\n"
+      "2. Складываем единицы: `7 + 2 = 9`\n"
+      "3. Складываем результаты: `70 + 9 = 79`.\n"
+      "Ответ: **79**."
+  )
+
+  st.markdown("---")
+  st.subheader("💡 Урок 2: Самый простой способ вычитания в уме")
+  st.write(
+      "**Метод округления:** Если вычитаемое близко к круглому числу"
+      " (например, 28), вычти круглое (30), а потом верни лишнее (прибавь 2)!"
+  )
+  st.info(
+      "**Пример:** `64 - 28`\n"
+      "1. Округляем до 30: `64 - 30 = 34`.\n"
+      "2. Возвращаем 2 (так как отняли больше): `34 + 2 = 36`.\n"
+      "Ответ: **36**."
+  )
+
+  st.markdown("---")
+  st.subheader("💡 Урок 3: Как быстро умножать на 9")
+  st.write(
+      "**Правило девятки:** Умножь число на 10, а затем вычти само число."
+  )
+  st.info(
+      "**Пример:** `7 × 9`\n"
+      "1. Умножаем на 10: `7 × 10 = 70`.\n"
+      "2. Вычитаем само число: `70 - 7 = 63`.\n"
+      "Ответ: **63**."
+  )
+
+
 # --- РЕЖИМ: Таблица умножения ---
-if mode == "✖️ Таблица умножения":
+elif mode == "✖️ Таблица умножения":
   st.header("✖️ Тренировка таблицы умножения")
-  st.write("💡 Накопи 25 правильных ответов и получи 1000 сум в копилку умножения!")
+  st.markdown(
+      "> **📝 Инструкция:** Вспомни таблицу умножения. Введи правильный ответ"
+      " цифрой. Накопи **25 правильных ответов**, чтобы заработать **1000 сум**"
+      " в копилку умножения!"
+  )
 
   if "mult_q" not in st.session_state:
     st.session_state.mult_q = None
@@ -108,10 +224,12 @@ if mode == "✖️ Таблица умножения":
       st.session_state.state["solved_total"] += 1
       if user_ans == st.session_state.mult_ans:
         st.session_state.state["correct_total"] += 1
+        save_data()
         process_reward("mult_correct_count", "mult_money", "Таблица умножения")
         st.session_state.mult_q = None
         st.rerun()
       else:
+        save_data()
         st.error(
             f"Ошибка! Правильный ответ: {st.session_state.mult_ans}. Попробуй"
             " еще раз!"
@@ -119,10 +237,15 @@ if mode == "✖️ Таблица умножения":
     else:
       st.warning("Пожалуйста, введи число!")
 
+
 # --- РЕЖИМ: Простая арифметика ---
 elif mode == "➕ Простая арифметика":
   st.header("➕ Простая арифметика (Сложение и вычитание)")
-  st.write("💡 Накопи 25 правильных ответов и получи 1000 сум в копилку арифметики!")
+  st.markdown(
+      "> **📝 Инструкция:** Используй методы быстрого счета из Школы инженера."
+      " Накопи **25 правильных ответов**, чтобы получить **1000 сум** в"
+      " копилку арифметики!"
+  )
 
   if "arith_q" not in st.session_state:
     st.session_state.arith_q = None
@@ -150,18 +273,25 @@ elif mode == "➕ Простая арифметика":
       st.session_state.state["solved_total"] += 1
       if user_ans_a == st.session_state.arith_ans:
         st.session_state.state["correct_total"] += 1
+        save_data()
         process_reward("arith_correct_count", "arith_money", "Простая арифметика")
         st.session_state.arith_q = None
         st.rerun()
       else:
+        save_data()
         st.error(f"Неверно. Правильный ответ: {st.session_state.arith_ans}")
     else:
       st.warning("Пожалуйста, введи число!")
 
+
 # --- РЕЖИМ: Текстовые задачи (Без повторов) ---
 elif mode == "📖 Текстовые задачи":
   st.header("📖 Текстовые задачи")
-  st.write("💡 Накопи 25 правильных ответов и получи 1000 сум в копилку текстовых задач!")
+  st.markdown(
+      "> **📝 Инструкция:** Внимательно прочитай условие, найди главные числа"
+      " и вопрос. Введи ответ цифрой. Накопи **25 правильных ответов**, чтобы"
+      " получить **1000 сум** в копилку текстовых задач!"
+  )
 
   tasks_list = [
       {
@@ -211,7 +341,7 @@ elif mode == "📖 Текстовые задачи":
         if t["id"] not in st.session_state.state["text_solved_ids"]
     ]
     if not available_text:
-      st.success("🎉 Ты решил все доступные текстовые задачи! Начинаем заново по кругу.")
+      st.success("🎉 Ты решил все текстовые задачи! Начинаем заново по кругу.")
       st.session_state.state["text_solved_ids"] = []
       available_text = tasks_list
     st.session_state.current_text_task = random.choice(available_text)
@@ -229,20 +359,23 @@ elif mode == "📖 Текстовые задачи":
         st.session_state.state["correct_total"] += 1
         if curr_t["id"] not in st.session_state.state["text_solved_ids"]:
           st.session_state.state["text_solved_ids"].append(curr_t["id"])
+        save_data()
         process_reward("text_correct_count", "text_money", "Текстовые задачи")
         st.session_state.current_text_task = None
         st.rerun()
       else:
+        save_data()
         st.error("Подумай еще раз! Внимательно перечитай условие.")
     else:
       st.warning("Пожалуйста, введи число!")
 
-# --- РЕЖИМ: Задачи для развития математического мышления (Для 10 лет, без повторов + 200 сум за задачу) ---
+
+# --- РЕЖИМ: Задачи для развития математического мышления ---
 elif mode == "🧠 Задачи для развития мышления":
   st.header("🧠 Развитие математического мышления и логики (10 лет)")
-  st.write(
-      "💡 Решай интересные логические задачки для твоего возраста! За каждую"
-      " правильно решенную задачу ты получаешь **200 сум** прямо в свою копилку."
+  st.markdown(
+      "> **📝 Инструкция:** Эти задачи на логику и смекалку. За каждую"
+      " правильно решенную задачу ты получаешь **200 сум** в копилку."
   )
 
   logic_list = [
@@ -308,7 +441,7 @@ elif mode == "🧠 Задачи для развития мышления":
         if t["id"] not in st.session_state.state["logic_solved_ids"]
     ]
     if not available_tasks:
-      st.success("🎉 Ура, Имрон! Ты решил абсолютно все логические задачи! Начинаем заново по кругу.")
+      st.success("🎉 Ура, Имрон! Ты решил все логические задачи! Начинаем заново по кругу.")
       st.session_state.state["logic_solved_ids"] = []
       available_tasks = logic_list
     st.session_state.current_logic_task = random.choice(available_tasks)
@@ -328,6 +461,7 @@ elif mode == "🧠 Задачи для развития мышления":
         if curr["id"] not in st.session_state.state["logic_solved_ids"]:
           st.session_state.state["logic_solved_ids"].append(curr["id"])
           st.session_state.state["logic_money"] += 200
+          add_earnings(200, "Логическая задача")
 
         st.success("🧠 Гениально! Ты отлично мыслишь логически и заработал 200 сум! 🏆")
         speak_voice("Ты умница, Имрон! Логическая задача решена правильно!")
@@ -335,14 +469,19 @@ elif mode == "🧠 Задачи для развития мышления":
         st.session_state.current_logic_task = None
         st.rerun()
       else:
+        save_data()
         st.error("Неправильно. Попробуй порассуждать по-другому!")
     else:
       st.warning("Пожалуйста, введи число!")
 
+
 # --- РЕЖИМ: Марафон 50 вопросов ---
 elif mode == "🏆 Марафон 50 вопросов (Награда 5000 сум)":
   st.header("🏆 Марафон: 50 вопросов без права на ошибку")
-  st.write("Пройди все 50 вопросов без единого промаха и получи 5000 сум!")
+  st.markdown(
+      "> **📝 Инструкция:** Ответь на 50 вопросов подряд без единой ошибки."
+      " Награда — **5000 сум** (доступно раз в 2 часа)."
+  )
 
   can_play_marathon = True
   if st.session_state.state["marathon_last_success"] is not None:
@@ -386,148 +525,6 @@ elif mode == "🏆 Марафон 50 вопросов (Награда 5000 су�
             if st.session_state.m_step >= 50:
               st.session_state.state["marathon_money"] += 5000
               st.session_state.state["marathon_last_success"] = now
+              add_earnings(5000, "Марафон 50 вопросов")
               speak_voice("Ты умница, Имрон! Марафон успешно пройден!")
-              st.success("🎉 ПОЗДРАВЛЯЕМ! Ты прошел весь марафон и заработал 5000 сум!")
-              st.session_state.m_active = False
-            else:
-              st.session_state.m_step += 1
-              a = random.randint(2, 9)
-              b = random.randint(2, 9)
-              st.session_state.m_q = f"{a} × {b}"
-              st.session_state.m_ans = a * b
-              st.rerun()
-          else:
-            st.error(f"❌ Ошибка на вопросе №{st.session_state.m_step}! Марафон сброшен.")
-            speak_voice("Ничего страшного, попробуй еще раз.")
-            st.session_state.m_active = False
-        else:
-          st.warning("Пожалуйста, введи число!")
-
-# --- РЕЖИМ: Спринт с таймером ---
-elif mode == "⏱️ Спринт с таймером (7 примеров, Награда 10000 сум)":
-  st.header("⏱️ Спринт с таймером")
-  st.info("💡 Задача: решить **7 примеров за 2 минуты (120 секунд)**. Награда — **10 000 сум** (доступно раз в 2 часа).")
-
-  can_play_sprint = True
-  if st.session_state.state["timed_mode_last_use"] is not None:
-    elapsed = now - st.session_state.state["timed_mode_last_use"]
-    if elapsed < timedelta(hours=2):
-      left_time = timedelta(hours=2) - elapsed
-      h_l = int(left_time.total_seconds() // 3600)
-      m_l = int((left_time.total_seconds() % 3600) // 60)
-      can_play_sprint = False
-      st.warning(f"⏳ Спринт будет доступен через {h_l} ч. {m_l} мин.")
-
-  if can_play_sprint:
-    if "sprint_active" not in st.session_state:
-      st.session_state.sprint_active = False
-      st.session_state.s_step = 1
-      st.session_state.s_start_time = None
-      st.session_state.s_q = None
-      st.session_state.s_ans = None
-
-    if not st.session_state.sprint_active:
-      if st.button("🚀 Начать Спринт (7 примеров / 2 мин)"):
-        st.session_state.sprint_active = True
-        st.session_state.s_step = 1
-        st.session_state.s_start_time = time.time()
-        a = random.randint(10, 50)
-        b = random.randint(10, 50)
-        st.session_state.s_q = f"{a} + {b}"
-        st.session_state.s_ans = a + b
-        st.rerun()
-    else:
-      elapsed_sec = time.time() - st.session_state.s_start_time
-      time_left = max(0, 120 - int(elapsed_sec))
-
-      if time_left == 0:
-        st.error("⏰ Время вышло! Спринт прерван.")
-        speak_voice("Время вышло, ничего страшного.")
-        st.session_state.sprint_active = False
-      else:
-        st.markdown(f"### ⏱️ Осталось времени: **{time_left} сек.** | Пример {st.session_state.s_step} из 7")
-        st.markdown(f"**Сколько будет: {st.session_state.s_q}**?")
-
-        user_s_str = st.text_input("Твой ответ:", value="", key=f"sprint_step_clean_{st.session_state.s_step}")
-
-        if st.button("Ответить на спринт"):
-          val_clean = user_s_str.strip()
-          if val_clean.lstrip("-").isdigit():
-            user_s_ans = int(val_clean)
-            st.session_state.state["solved_total"] += 1
-            if user_s_ans == st.session_state.s_ans:
-              st.session_state.state["correct_total"] += 1
-
-              if st.session_state.s_step >= 7:
-                st.session_state.state["sprint_money"] += 10000
-                st.session_state.state["timed_mode_last_use"] = now
-                speak_voice("Ты умница, Имрон! Спринт успешно пройден, ты заработал 10 тысяч сум!")
-                st.success("🏆 Блестяще! Спринт пройден и заработано 10 000 сум!")
-                st.session_state.sprint_active = False
-              else:
-                st.session_state.s_step += 1
-                a = random.randint(15, 60)
-                b = random.randint(10, 40)
-                if random.choice([True, False]):
-                  st.session_state.s_q = f"{a} + {b}"
-                  st.session_state.s_ans = a + b
-                else:
-                  st.session_state.s_q = f"{a} - {b}"
-                  st.session_state.s_ans = a - b
-                st.rerun()
-            else:
-              st.error("❌ Ошибка! Спринт прерван из-за неверного ответа.")
-              st.session_state.sprint_active = False
-          else:
-            st.warning("Пожалуйста, введи число!")
-
-# --- РЕЖИМ: Статистика и Отчет для родителя ---
-elif mode == "📊 Статистика и Отчет для родителя":
-  st.header("📊 Статистика успехов и Панель родительского контроля")
-  st.write("👨‍👦 Здесь отображаются честные данные об активности Имрона. Статистика надежно сохраняется и никогда не стирается!")
-
-  # Считаем общую сумму из всех раздельных копилок
-  total_earned = (
-      st.session_state.state["mult_money"] +
-      st.session_state.state["arith_money"] +
-      st.session_state.state["text_money"] +
-      st.session_state.state["logic_money"] +
-      st.session_state.state["marathon_money"] +
-      st.session_state.state["sprint_money"]
-  )
-
-  col1, col2, col3 = st.columns(3)
-  with col1:
-    st.metric(label="Всего решено", value=st.session_state.state["solved_total"])
-  with col2:
-    st.metric(label="Правильных ответов", value=st.session_state.state["correct_total"])
-  with col3:
-    st.metric(label="💰 Общая копилка", value=f"{total_earned} сум")
-
-  st.divider()
-  st.subheader("🏦 Детализация копилок по разделам:")
-
-  c1, c2, c3 = st.columns(3)
-  with c1:
-    st.metric(label="✖️ Умножение", value=f"{st.session_state.state['mult_money']} сум")
-    st.caption(f"Правильных ответов: {st.session_state.state['mult_correct_count']}")
-  with c2:
-    st.metric(label="➕ Арифметика", value=f"{st.session_state.state['arith_money']} сум")
-    st.caption(f"Правильных ответов: {st.session_state.state['arith_correct_count']}")
-  with c3:
-    st.metric(label="📖 Текст. задачи", value=f"{st.session_state.state['text_money']} сум")
-    st.caption(f"Правильных ответов: {st.session_state.state['text_correct_count']}")
-
-  c4, c5, c6 = st.columns(3)
-  with c4:
-    st.metric(label="🧠 Логическое мышление", value=f"{st.session_state.state['logic_money']} сум")
-    st.caption(f"Решено задач: {len(st.session_state.state['logic_solved_ids'])}")
-  with c5:
-    st.metric(label="🏆 Марафон", value=f"{st.session_state.state['marathon_money']} сум")
-  with c6:
-    st.metric(label="⏱️ Спринт", value=f"{st.session_state.state['sprint_money']} сум")
-
-  st.divider()
-  st.info(
-      "🎯 **Отчет для отца:** Все тренировки фиксируются. Имрон развивает логическое мышление, решает задачи без повторов и постепенно идет к цели стать настоящим инженером!"
-  )
+              st.success("🎉 ПОЗДРАВЛЯЕМ
