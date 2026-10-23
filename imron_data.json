@@ -1,18 +1,19 @@
 {
-    "solved_total": 25,
-    "correct_total": 17,
+    "solved_total": 26,
+    "correct_total": 18,
     "mult_correct_count": 0,
     "arith_correct_count": 0,
     "text_correct_count": 0,
     "mult_money": 0,
     "arith_money": 0,
     "text_money": 0,
-    "logic_money": 400,
+    "logic_money": 600,
     "marathon_money": 0,
     "sprint_money": 10000,
     "logic_solved_ids": [
         5,
-        8
+        8,
+        3
     ],
     "text_solved_ids": [],
     "marathon_last_success": null,
@@ -30,6 +31,11 @@
         },
         {
             "date": "2026-10-23T15:51:59.780427",
+            "amount": 200,
+            "source": "Логическая задача"
+        },
+        {
+            "date": "2026-10-23T15:54:21.778015",
             "amount": 200,
             "source": "Логическая задача"
         }
