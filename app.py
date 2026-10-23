@@ -467,3 +467,195 @@ elif mode == "🏆 Марафон 50 вопросов (Награда 5000 су�
 
 
 # --- РЕЖИМ: Спринт с таймером (Усложненный: Арифметика + Текст + Логика) ---
+elif mode == "⏱️ Спринт с таймером (7 примеров, Награда 10000 сум)":
+    st.header("⏱️ Супер-Спринт с таймером (Смешанные задачи)")
+    st.info("💡 Задача: решить **7 разных задач (арифметика, логика, текст) за 3 минуты (180 секунд)**. Награда — **10 000 сум** (доступно раз в 2 часа).")
+
+    can_play_sprint = True
+    if st.session_state.state["timed_mode_last_use"] is not None:
+        elapsed = now - st.session_state.state["timed_mode_last_use"]
+        if elapsed < timedelta(hours=2):
+            left_time = timedelta(hours=2) - elapsed
+            h_l = int(left_time.total_seconds() // 3600)
+            m_l = int((left_time.total_seconds() % 3600) // 60)
+            can_play_sprint = False
+            st.warning(f"⏳ Спринт будет доступен через {h_l} ч. {m_l} мин.")
+
+    def generate_sprint_question():
+        q_type = random.choice(["arithmetic", "text", "logic"])
+        if q_type == "arithmetic":
+            a = random.randint(15, 60)
+            b = random.randint(10, 40)
+            if random.choice([True, False]):
+                return f"{a} + {b}", a + b
+            else:
+                return f"{a} - {b}", a - b
+        elif q_type == "text":
+            tasks_list = [
+                {"q": "У Ирины было 4 коробки с карандашами, в каждой по 6 карандашей. Сколько всего карандашей у Ирины?", "ans": 24},
+                {"q": "В гараже стояло 15 машин. Уехали 7 машин. Сколько машин осталось в гараже?", "ans": 8},
+                {"q": "На трех полках стояло по 9 книг. Сколько всего книг на полках?", "ans": 27},
+                {"q": "У Саши было 50 сумов. Он купил тетрадь за 18 сумов. Сколько денег осталось?", "ans": 32},
+                {"q": "В автобусе ехало 28 пассажиров. На остановке зашло еще 14 человек. Сколько стало пассажиров?", "ans": 42},
+                {"q": "В мастерской отремонтировали 12 велосипедов, а самокатов на 4 больше. Сколько всего самокатов?", "ans": 16},
+                {"q": "У бабушки в саду росло 18 кустов белых роз, а красных на 5 меньше. Сколько всего роз в саду?", "ans": 31}
+            ]
+            t = random.choice(tasks_list)
+            return t["q"], t["ans"]
+        else:
+            logic_list = [
+                {"q": "Лестница состоит из 15 ступенек. На какую ступеньку нужно встать, чтобы оказаться посередине?", "ans": 8},
+                {"q": "У мальчика столько же сестер, сколько и братьев, а у его сестры вдвое меньше сестер, чем братьев. Сколько детей?", "ans": 4},
+                {"q": "Блокнот с карандашом стоят 1100 сумов. Блокнот дороже на 1000 сумов. Сколько стоит карандаш?", "ans": 50},
+                {"q": "Трое друзей делили яблоки. Каждому досталось по 4, и 2 осталось. Сколько было яблок?", "ans": 14},
+                {"q": "Шоколадку разделили на 6 частей по прямой линии. Сколько было сделано разрезов?", "ans": 5},
+                {"q": "В комнате горело 5 свечей, 2 потухли. Сколько свечей осталось?", "ans": 2},
+                {"q": "Два года назад Малик был вдвое младше сестры. Сейчас Малику 12 лет. Сколько лет сестре?", "ans": 22},
+                {"q": "У отца 5 сыновей, и у каждого есть одна сестра. Сколько всего детей в семье?", "ans": 6},
+                {"q": "У бабушки жили внук Федя, кот Пушок и собака Дружок. Сколько всего ног у этих обитателей в доме?", "ans": 10}
+            ]
+            t = random.choice(logic_list)
+            return t["q"], t["ans"]
+
+    if can_play_sprint:
+        if "sprint_active" not in st.session_state:
+            st.session_state.sprint_active = False
+            st.session_state.s_step = 1
+            st.session_state.s_start_time = None
+            st.session_state.s_q = None
+            st.session_state.s_ans = None
+
+        if not st.session_state.sprint_active:
+            if st.button("🚀 Начать Супер-Спринт (7 задач / 3 мин)"):
+                st.session_state.sprint_active = True
+                st.session_state.s_step = 1
+                st.session_state.s_start_time = time.time()
+                st.session_state.s_q, st.session_state.s_ans = generate_sprint_question()
+                st.rerun()
+        else:
+            elapsed_sec = time.time() - st.session_state.s_start_time
+            time_left = max(0, 180 - int(elapsed_sec))
+
+            if time_left == 0:
+                st.error("⏰ Время вышло! Спринт прерван.")
+                speak_voice("Время вышло, ничего страшного.")
+                st.session_state.sprint_active = False
+            else:
+                st.markdown(f"### ⏱️ Осталось времени: **{time_left} сек.** | Задача {st.session_state.s_step} из 7")
+                st.markdown(f"**Задание:** {st.session_state.s_q}")
+
+                user_s_str = st.text_input("Твой ответ (только число):", value="", key=f"sprint_step_clean_{st.session_state.s_step}")
+
+                if st.button("Ответить на спринт"):
+                    val_clean = user_s_str.strip()
+                    if val_clean.lstrip("-").isdigit():
+                        user_s_ans = int(val_clean)
+                        st.session_state.state["solved_total"] += 1
+                        if user_s_ans == st.session_state.s_ans:
+                            st.session_state.state["correct_total"] += 1
+
+                            if st.session_state.s_step >= 7:
+                                st.session_state.state["sprint_money"] += 10000
+                                st.session_state.state["timed_mode_last_use"] = now
+                                add_earnings(10000, "Супер-Спринт с таймером")
+                                speak_voice("Ты гений, Имрон! Супер-Спринт пройден, ты заработал 10 тысяч сум!")
+                                st.success("🏆 Блестяще! Ты решил все сложные задачи и заработал 10 000 сум!")
+                                st.session_state.sprint_active = False
+                            else:
+                                st.session_state.s_step += 1
+                                st.session_state.s_q, st.session_state.s_ans = generate_sprint_question()
+                                st.rerun()
+                        else:
+                            save_data()
+                            st.error("❌ Ошибка! Спринт прерван из-за неверного ответа.")
+                            st.session_state.sprint_active = False
+                    else:
+                        st.warning("Пожалуйста, введи число!")
+
+
+# --- РЕЖИМ: Статистика и Отчет для родителя ---
+elif mode == "📊 Статистика и Отчет для родителя":
+    st.header("📊 Статистика успехов и Панель родительского контроля")
+    st.write(
+        "👨‍👦 Здесь отображаются данные активности Имрона. Вся статистика"
+        " надежно сохраняется на GitHub и защищена от удаления!"
+    )
+
+    total_earned = (
+        st.session_state.state["mult_money"] +
+        st.session_state.state["arith_money"] +
+        st.session_state.state["text_money"] +
+        st.session_state.state["logic_money"] +
+        st.session_state.state["marathon_money"] +
+        st.session_state.state["sprint_money"]
+    )
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(label="Всего решено", value=st.session_state.state["solved_total"])
+    with col2:
+        st.metric(label="Правильных ответов", value=st.session_state.state["correct_total"])
+    with col3:
+        st.metric(label="💰 Общая копилка", value=f"{total_earned} сум")
+
+    st.divider()
+
+    st.subheader("📅 Недельный отчет (За последние 7 дней)")
+    week_ago = datetime.now() - timedelta(days=7)
+    week_earned = 0
+    week_operations_count = 0
+
+    for item in st.session_state.state["earnings_history"]:
+        item_date = item["date"]
+        if isinstance(item_date, str):
+            item_date = datetime.fromisoformat(item_date)
+        if item_date >= week_ago:
+            week_earned += item["amount"]
+            week_operations_count += 1
+
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
+        st.metric(label="💵 Заработано за неделю", value=f"{week_earned} сум")
+    with col_w2:
+        st.metric(label="🎯 Наград за неделю", value=week_operations_count)
+
+    st.divider()
+    st.subheader("🏦 Детализация копилок по разделам:")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric(label="✖️ Умножение", value=f"{st.session_state.state['mult_money']} сум")
+        st.caption(f"Правильных ответов: {st.session_state.state['mult_correct_count']}")
+    with c2:
+        st.metric(label="➕ Арифметика", value=f"{st.session_state.state['arith_money']} сум")
+        st.caption(f"Правильных ответов: {st.session_state.state['arith_correct_count']}")
+    with c3:
+        st.metric(label="📖 Текст. задачи", value=f"{st.session_state.state['text_money']} сум")
+        st.caption(f"Правильных ответов: {st.session_state.state['text_correct_count']}")
+
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        st.metric(label="🧠 Логическое мышление", value=f"{st.session_state.state['logic_money']} сум")
+        st.caption(f"Решено задач: {len(st.session_state.state['logic_solved_ids'])}")
+    with c5:
+        st.metric(label="🏆 Марафон", value=f"{st.session_state.state['marathon_money']} сум")
+    with c6:
+        st.metric(label="⏱️ Спринт", value=f"{st.session_state.state['sprint_money']} сум")
+
+    st.divider()
+
+    st.subheader("📜 История начислений в копилку (по порядку)")
+    history = st.session_state.state["earnings_history"]
+
+    if not history:
+        st.info("История пока пуста. Как только Имрон заработает сумы, здесь появится хронология!")
+    else:
+        for idx, record in enumerate(reversed(history), 1):
+            rec_date = record["date"]
+            if isinstance(rec_date, str):
+                rec_date = datetime.fromisoformat(rec_date)
+            date_str = rec_date.strftime("%d.%m.%Y в %H:%M")
+            st.markdown(f"**{idx}.** `{date_str}` — **+{record['amount']} сум** *({record['source']})*")
+
+    st.divider()
+    st.info("🎯 **Отчет для отца:** Данные надежно зафиксированы на GitHub. Копилка и история больше никогда не пропадут!")
