@@ -22,40 +22,47 @@ def get_repo():
     return g.get_repo(repo_name)
 
 def load_data():
+    defaults = {
+        "solved_total": 0,
+        "correct_total": 0,
+        "mult_correct_count": 0,
+        "arith_correct_count": 0,
+        "text_correct_count": 0,
+        "mult_money": 0,
+        "arith_money": 0,
+        "text_money": 0,
+        "logic_money": 0,
+        "marathon_money": 0,
+        "sprint_money": 0,
+        "logic_solved_ids": [],
+        "text_solved_ids": [],
+        "marathon_last_success": None,
+        "timed_mode_last_use": None,
+        "earnings_history": [],
+    }
     try:
         repo = get_repo()
         file_content = repo.get_contents(DATA_FILE)
         decoded_content = file_content.decoded_content.decode('utf-8')
         data = json.loads(decoded_content)
         
+        # Гарантируем наличие всех ключей, чтобы избежать ошибок
+        for k, v in defaults.items():
+            if k not in data:
+                data[k] = v
+        
         if "earnings_history" in data:
             for item in data.get("earnings_history", []):
-                item["date"] = datetime.fromisoformat(item["date"])
-        if data.get("marathon_last_success"):
+                if isinstance(item.get("date"), str):
+                    item["date"] = datetime.fromisoformat(item["date"])
+        if data.get("marathon_last_success") and isinstance(data["marathon_last_success"], str):
             data["marathon_last_success"] = datetime.fromisoformat(data["marathon_last_success"])
-        if data.get("timed_mode_last_use"):
+        if data.get("timed_mode_last_use") and isinstance(data["timed_mode_last_use"], str):
             data["timed_mode_last_use"] = datetime.fromisoformat(data["timed_mode_last_use"])
             
         return data
     except Exception as e:
-        return {
-            "solved_total": 0,
-            "correct_total": 0,
-            "mult_correct_count": 0,
-            "arith_correct_count": 0,
-            "text_correct_count": 0,
-            "mult_money": 0,
-            "arith_money": 0,
-            "text_money": 0,
-            "logic_money": 0,
-            "marathon_money": 0,
-            "sprint_money": 0,
-            "logic_solved_ids": [],
-            "text_solved_ids": [],
-            "marathon_last_success": None,
-            "timed_mode_last_use": None,
-            "earnings_history": [],
-        }
+        return defaults
 
 def save_data():
     try:
@@ -64,15 +71,15 @@ def save_data():
         formatted_history = []
         for item in data_to_save["earnings_history"]:
             formatted_history.append({
-                "date": item["date"].isoformat(),
+                "date": item["date"].isoformat() if isinstance(item["date"], datetime) else item["date"],
                 "amount": item["amount"],
                 "source": item["source"],
             })
         data_to_save["earnings_history"] = formatted_history
 
-        if data_to_save["marathon_last_success"]:
+        if isinstance(data_to_save.get("marathon_last_success"), datetime):
             data_to_save["marathon_last_success"] = data_to_save["marathon_last_success"].isoformat()
-        if data_to_save["timed_mode_last_use"]:
+        if isinstance(data_to_save.get("timed_mode_last_use"), datetime):
             data_to_save["timed_mode_last_use"] = data_to_save["timed_mode_last_use"].isoformat()
 
         repo = get_repo()
