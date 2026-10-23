@@ -1,1 +1,18 @@
-{}
+{
+    "solved_total": 3,
+    "correct_total": 2,
+    "mult_correct_count": 0,
+    "arith_correct_count": 0,
+    "text_correct_count": 0,
+    "mult_money": 0,
+    "arith_money": 0,
+    "text_money": 0,
+    "logic_money": 0,
+    "marathon_money": 0,
+    "sprint_money": 0,
+    "logic_solved_ids": [],
+    "text_solved_ids": [],
+    "marathon_last_success": null,
+    "timed_mode_last_use": null,
+    "earnings_history": []
+}
