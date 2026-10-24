@@ -1,6 +1,6 @@
 {
-    "solved_total": 48,
-    "correct_total": 19,
+    "solved_total": 51,
+    "correct_total": 21,
     "mult_correct_count": 0,
     "arith_correct_count": 0,
     "text_correct_count": 0,
@@ -45,5 +45,7 @@
             "amount": 200,
             "source": "Логическая задача"
         }
-    ]
+    ],
+    "robot_money": 0,
+    "robot_solved_ids": []
 }
