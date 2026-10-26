@@ -1,6 +1,6 @@
 {
-    "solved_total": 66,
-    "correct_total": 33,
+    "solved_total": 78,
+    "correct_total": 45,
     "mult_correct_count": 0,
     "arith_correct_count": 0,
     "text_correct_count": 0,
@@ -9,7 +9,7 @@
     "text_money": 0,
     "logic_money": 800,
     "marathon_money": 0,
-    "sprint_money": 20000,
+    "sprint_money": 30000,
     "logic_solved_ids": [
         5,
         8,
@@ -18,7 +18,7 @@
     ],
     "text_solved_ids": [],
     "marathon_last_success": null,
-    "timed_mode_last_use": "2026-10-24T08:10:37.297149",
+    "timed_mode_last_use": "2026-10-26T04:38:27.422135",
     "earnings_history": [
         {
             "date": "2026-10-23T15:34:36.654532",
@@ -47,6 +47,11 @@
         },
         {
             "date": "2026-10-24T08:10:37.298676",
+            "amount": 10000,
+            "source": "Супер-Спринт с таймером"
+        },
+        {
+            "date": "2026-10-26T04:38:27.423981",
             "amount": 10000,
             "source": "Супер-Спринт с таймером"
         }
