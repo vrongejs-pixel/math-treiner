@@ -174,6 +174,60 @@ def thinking_question():
     q = random.choice(bank)
     return {"q": q[0], "answer": q[1], "hint": q[2], "solution": q[3]}
 
+
+def marathon_question(kind):
+    if kind == "Вычисления":
+        a = random.randint(24, 89)
+        b = random.randint(12, 29)
+        c = random.randint(15, 90)
+        ans = a*b-c
+        return {"type":kind,"q":f"Вычисли: {a} × {b} − {c}.", "answer":ans,
+                "hint":"Сначала умножение, затем вычитание. Можно разложить второй множитель на десятки и единицы.",
+                "solution":f"{a} × {b} = {a*b}; {a*b} − {c} = {ans}."}
+    if kind == "Логика":
+        bank = [
+            ("Продолжи ряд: 2, 6, 12, 20, 30, __.", 42, "Сравни разности между соседними числами.", "Разности 4, 6, 8, 10; следующая 12. 30 + 12 = 42."),
+            ("Продолжи ряд: 1, 4, 10, 22, 46, __.", 94, "Проверь правило «умножить на 2 и прибавить 2».", "46 × 2 + 2 = 94."),
+            ("В семье 3 сестры. У каждой сестры по одному брату. Сколько всего детей?", 4, "Брат у всех сестёр может быть один и тот же.", "Три сестры и один общий брат: всего 4 ребёнка."),
+            ("Пять машин делают пять деталей за пять минут. За сколько минут 20 машин сделают 20 деталей?", 5, "Сколько деталей за пять минут делает одна машина?", "Каждая машина делает одну деталь за 5 минут. Значит, 20 машин сделают 20 деталей за 5 минут."),
+            ("Улитка ползёт по столбу 10 м: днём вверх на 3 м, ночью вниз на 2 м. За сколько дней она достигнет вершины?", 8, "После каждой полной ночи чистый прирост 1 м. В последний день она уже не сползает.", "После 7 ночей она на 7 м. На 8-й день поднимется до 10 м и достигнет вершины."),
+            ("Есть 8 шаров, один тяжелее. Сколько взвешиваний минимум нужно на чашечных весах, чтобы гарантированно найти тяжёлый?", 2, "Сначала сравни группы по три шара.", "Взвесь 3 против 3. Если равны — тяжёлый среди двух оставшихся; если нет — в тяжёлой тройке. Второе взвешивание решает задачу."),
+            ("Сколько раз цифра 9 встречается в записи чисел от 1 до 20?", 2, "Выпиши числа, в которых есть цифра 9.", "Это 9 и 19. Цифра 9 встречается два раза."),
+            ("У квадрата срезали два противоположных угла прямыми линиями. Сколько углов осталось?", 6, "Каждый срез убирает один угол и создаёт два новых.", "4 − 2 + 4 = 6 углов.")
+        ]
+        q = random.choice(bank)
+        return {"type":kind,"q":q[0],"answer":q[1],"hint":q[2],"solution":q[3]}
+    if kind == "Текстовая задача":
+        a,b,c = random.randint(7,15), random.randint(18,35), random.randint(25,90)
+        ans = a*b-c
+        return {"type":kind,"q":f"В {a} ящиках лежало по {b} деталей. {c} деталей отправили. Сколько осталось?", "answer":ans,
+                "hint":"Сначала найди общее количество во всех ящиках, затем вычти отправленные детали.",
+                "solution":f"{a} × {b} = {a*b}; {a*b} − {c} = {ans}."}
+    if kind == "Геометрия":
+        a,b = random.randint(12,28), random.randint(5,14)
+        if random.choice([True,False]):
+            ans = 2*(a+b)
+            return {"type":kind,"q":f"Прямоугольник имеет длину {a} см и ширину {b} см. Найди периметр.", "answer":ans,
+                    "hint":"Периметр — сумма всех сторон. Не путай его с площадью.",
+                    "solution":f"P = 2 × ({a} + {b}) = 2 × {a+b} = {ans} см."}
+        ans=a*b
+        return {"type":kind,"q":f"Прямоугольная площадка {a} м на {b} м. Найди площадь.", "answer":ans,
+                "hint":"Площадь прямоугольника — длина умножить на ширину.",
+                "solution":f"S = {a} × {b} = {ans} м²."}
+    bank = [
+        ("Почему гаечный ключ с длинной ручкой удобнее короткого?", 1, "Сравни расстояние от руки до оси гайки.", "Длинная ручка увеличивает плечо силы. Ответ 1."),
+        ("Два одинаковых кубика: один из дерева, другой из металла. Какой обычно тяжелее при одинаковом размере?", 1, "Сравни плотность материалов.", "Металл обычно плотнее дерева, поэтому тяжелее. Ответ 1."),
+        ("Какой материал обычно лучше проводит электрический ток: медь или резина? Введи 1 для меди.", 1, "Подумай, из чего делают провода и из чего — изоляцию.", "Медь — проводник, резина — изолятор. Ответ 1."),
+        ("Если увеличить плечо рычага в 2 раза, какую силу нужно приложить для того же момента? Введи число долей: 1 — половину, 2 — ту же.", 1, "При большем плече можно приложить меньшую силу.", "В идеальном случае нужна половина силы. Ответ 1.")
+    ]
+    q=random.choice(bank)
+    return {"type":"Инженерия","q":q[0],"answer":q[1],"hint":q[2],"solution":q[3]}
+
+def build_marathon():
+    kinds = ["Вычисления"]*10 + ["Логика"]*10 + ["Текстовая задача"]*10 + ["Геометрия"]*10 + ["Инженерия"]*10
+    random.shuffle(kinds)
+    return [marathon_question(k) for k in kinds]
+
 LESSONS = {
 "Математика": ("Математическая лаборатория", "Изучаем вычисления, умножение и деление столбиком, дроби, измерения, периметр и площадь. Главное — понимать смысл действий, а не только запоминать ответы."),
 "Логика": ("Лаборатория логики", "Ищем закономерности, учимся проверять гипотезы, замечать ловушки в формулировках и объяснять, почему ответ верен."),
@@ -258,6 +312,7 @@ if mode in LESSONS:
 
 elif mode == "Марафон 50 вопросов":
     st.header("🏆 Большой марафон — 50 заданий")
+    st.write("Пять направлений по 10 заданий: сложные вычисления, логика, текстовые задачи, геометрия и инженерное мышление.")
     today = date.today().isoformat()
     attempts = D.setdefault("marathon_attempts", {})
     used = attempts.get(today, 0)
@@ -265,57 +320,76 @@ elif mode == "Марафон 50 вопросов":
     if st.session_state.marathon is None:
         if used >= 2:
             st.warning("Сегодня обе попытки использованы. Завтра можно будет попробовать снова.")
-        elif st.button("Начать марафон"):
+        elif st.button("Начать сложный марафон"):
             attempts[today] = used + 1
-            st.session_state.marathon = {"step": 1, "right": 0, "wrong": 0, "question": new_question("Математика")}
+            st.session_state.marathon = {"step":0,"right":0,"wrong":0,"questions":build_marathon(),"feedback":None,"started":datetime.now().isoformat(),"rewarded":False}
             save_data()
             st.rerun()
     else:
-        m = st.session_state.marathon
-        st.progress(m["step"]/50)
-        st.subheader(f"Вопрос {m['step']} из 50")
-        st.markdown("### "+m["question"]["q"])
-        with st.expander("💡 Помоги понять — пример на другой задаче"):
-            ex_title, ex_steps = worked_example("Математика")
-            st.markdown("**" + ex_title + "**")
-            st.write(ex_steps)
-            st.caption("Подсказка к текущей задаче: " + m["question"]["hint"])
-        with st.expander("📘 Показать решение текущего задания"):
-            st.write(m["question"]["solution"])
-        ans = st.text_input("Ответ", key=f"marathon_{m['step']}")
-        if st.button("Проверить ответ", key="marathon_check"):
-            if ans.strip().lstrip("-").isdigit():
-                D["solved_total"] += 1
-                if int(ans) == m["question"]["answer"]:
-                    m["right"] += 1
-                    D["correct_total"] += 1
-                    st.success("Верно!")
-                    m["step"] += 1
-                    if m["step"] <= 50:
-                        m["question"] = new_question("Математика")
-                else:
-                    m["wrong"] += 1
-                    D["errors_total"] = D.get("errors_total", 0) + 1
-                    st.error("Ошибка — это не поражение, а возможность научиться чему-то новому.")
-                    st.write("Правильный ответ:", m["question"]["answer"])
-                    st.write(m["question"]["solution"])
-                    st.info("Марафон продолжается. Ошибка не сбрасывает твой результат.")
-                if m["step"] > 50:
-                    D["marathon_best"] = max(D.get("marathon_best", 0), m["right"])
-                    if m["right"] >= 40:
-                        award(15000, "Марафон")
-                        D["marathon_last_success"] = datetime.now().isoformat()
-                        st.balloons()
-                        st.success(f"Марафон пройден: {m['right']} из 50! Награда — 15 000 сум.")
+        m=st.session_state.marathon
+        if m["step"] < 50:
+            q=m["questions"][m["step"]]
+            st.progress((m["step"]+1)/50)
+            st.caption(f"Задание {m['step']+1} из 50 · Раздел: {q['type']}")
+            st.markdown("### "+q["q"])
+            if m["feedback"] is None:
+                with st.expander("💡 Помоги понять — пример на другой задаче"):
+                    ex_title,ex_steps=worked_example("Логика" if q["type"]=="Логика" else "Математика")
+                    st.markdown("**"+ex_title+"**")
+                    st.write(ex_steps)
+                    st.caption("Подсказка к текущей задаче: "+q["hint"])
+                with st.expander("📘 Показать решение текущего задания"):
+                    st.write(q["solution"])
+                ans=st.text_input("Твой ответ (число)",key=f"mixed_marathon_{m['step']}")
+                if st.button("Проверить ответ",key=f"mixed_check_{m['step']}"):
+                    if ans.strip().lstrip("-").isdigit():
+                        D["solved_total"]=D.get("solved_total",0)+1
+                        if int(ans.strip())==q["answer"]:
+                            m["right"]+=1
+                            D["correct_total"]=D.get("correct_total",0)+1
+                            m["feedback"]="correct"
+                        else:
+                            m["wrong"]+=1
+                            D["errors_total"]=D.get("errors_total",0)+1
+                            m["feedback"]="wrong"
+                        save_data()
+                        st.rerun()
                     else:
-                        st.info(f"Финиш! Результат: {m['right']} из 50. Нужно 40. Изучи ошибки и попробуй в следующий раз.")
-                    st.session_state.marathon = None
+                        st.warning("Введи ответ числом.")
+            else:
+                if m["feedback"]=="correct":
+                    st.success("Верно! Хорошее рассуждение.")
+                else:
+                    st.error("Ошибка — это не поражение, а возможность научиться чему-то новому.")
+                    st.write("Правильный ответ:",q["answer"])
+                    st.write("Разбор:",q["solution"])
+                st.write(f"Счёт: {m['right']} правильных из {m['step']+1} отвеченных.")
+                if st.button("Следующее задание",key=f"mixed_next_{m['step']}"):
+                    m["step"]+=1
+                    m["feedback"]=None
+                    save_data()
+                    st.rerun()
+        else:
+            score=m["right"]
+            D["marathon_best"]=max(D.get("marathon_best",0),score)
+            elapsed=datetime.now()-datetime.fromisoformat(m["started"])
+            st.subheader("🏁 Марафон завершён!")
+            st.metric("Результат",f"{score} / 50")
+            st.write(f"Ошибок: {m['wrong']} · Время: {str(elapsed).split('.')[0]}")
+            if score>=40 and not m.get("rewarded"):
+                award(15000,"Марафон")
+                D["marathon_last_success"]=datetime.now().isoformat()
+                m["rewarded"]=True
+                st.balloons()
+                st.success("Испытание пройдено! Награда — 15 000 сум.")
+            elif score<40:
+                st.info("Пока не пройдено. Посмотри, какие типы задач оказались трудными, потренируйся и возвращайся.")
+            if st.button("Закрыть результат"):
+                st.session_state.marathon=None
                 save_data()
                 st.rerun()
-            else:
-                st.warning("Введи число.")
-        if st.button("Завершить марафон"):
-            st.session_state.marathon = None
+        if st.button("Завершить марафон досрочно"):
+            st.session_state.marathon=None
             save_data()
             st.rerun()
 
