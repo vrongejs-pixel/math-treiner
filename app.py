@@ -242,7 +242,11 @@ LESSONS = {
 st.title("🚀 Академия юного инженера — Имрон")
 st.caption("Учись понимать, рассуждать, создавать и проверять свои идеи.")
 sections = ["Математика", "Логика", "Физика и инженерия", "Память и внимание", "Текстовые задачи", "Стратегия", "Творчество", "Развитие мышления", "Марафон 50 вопросов", "Инженерный спринт", "Статистика", "Копилка"]
-mode = st.sidebar.selectbox("Выбери направление", sections)
+if st.sidebar.button("📊 Открыть статистику", use_container_width=True):
+    st.session_state["nav_mode"] = "Статистика"
+if st.sidebar.button("💰 Открыть копилку", use_container_width=True):
+    st.session_state["nav_mode"] = "Копилка"
+mode = st.sidebar.selectbox("Выбери направление", sections, key="nav_mode")
 
 if mode in LESSONS:
     title, theory = LESSONS[mode]
