@@ -241,7 +241,7 @@ LESSONS = {
 
 st.title("🚀 Академия юного инженера — Имрон")
 st.caption("Учись понимать, рассуждать, создавать и проверять свои идеи.")
-sections = ["Математика", "Логика", "Физика и инженерия", "Память и внимание", "Текстовые задачи", "Стратегия", "Творчество", "Развитие мышления", "Марафон 50 вопросов", "Инженерный спринт", "Статистика и копилка"]
+sections = ["Математика", "Логика", "Физика и инженерия", "Память и внимание", "Текстовые задачи", "Стратегия", "Творчество", "Развитие мышления", "Марафон 50 вопросов", "Инженерный спринт", "Статистика", "Копилка"]
 mode = st.sidebar.selectbox("Выбери направление", sections)
 
 if mode in LESSONS:
@@ -430,17 +430,48 @@ elif mode == "Инженерный спринт":
                     st.error("Ошибка — это не поражение, а возможность научиться чему-то новому.")
                     st.write("Ответ:", t["answer"], "Разбор:", t["solution"])
 
-else:
-    st.header("📊 Статистика и копилка Имрона")
-    total = sum(D.get(k, 0) for k in ["mult_money","arith_money","text_money","logic_money","marathon_money","sprint_money","robot_money"])
-    c1,c2,c3 = st.columns(3)
-    c1.metric("Решено заданий", D.get("solved_total",0))
-    c2.metric("Правильных ответов", D.get("correct_total",0))
-    c3.metric("Копилка", f"{total:,} сум".replace(",", " "))
-    st.metric("Ошибки — опыт для роста", D.get("errors_total",0))
-    st.metric("Лучший результат марафона", f"{D.get('marathon_best',0)} / 50")
+elif mode == "Статистика":
+    st.header("📊 Статистика Имрона")
+    solved = int(D.get("solved_total", 0) or 0)
+    correct = int(D.get("correct_total", 0) or 0)
+    errors = int(D.get("errors_total", 0) or 0)
+    accuracy = round(correct / solved * 100) if solved else 0
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Решено заданий", solved)
+    c2.metric("Правильных ответов", correct)
+    c3.metric("Точность", f"{accuracy}%")
+    c4, c5 = st.columns(2)
+    c4.metric("Ошибки — опыт для роста", errors)
+    c5.metric("Лучший результат марафона", f"{D.get('marathon_best', 0)} / 50")
+    st.subheader("Уровни навыков")
+    skills = D.get("skill", {})
+    if skills:
+        for name, info in skills.items():
+            st.write(f"**{name}** — уровень {info.get('level', 1)} из 5 · правильных подряд: {info.get('streak', 0)}")
+    else:
+        st.info("Пока нет данных об уровнях. Решай задания в учебных разделах — прогресс появится здесь.")
+    st.subheader("Резервная копия")
+    st.download_button("Скачать резервную копию прогресса", json.dumps(D, ensure_ascii=False, indent=2), file_name="imron_data_backup.json", mime="application/json")
+elif mode == "Копилка":
+    st.header("💰 Копилка Имрона")
+    money_keys = ["mult_money", "arith_money", "text_money", "logic_money", "marathon_money", "sprint_money", "robot_money"]
+    total = sum(int(D.get(k, 0) or 0) for k in money_keys)
+    st.metric("Всего накоплено", f"{total:,} сум".replace(",", " "))
+    st.subheader("Баланс по направлениям")
+    labels = [
+        ("Математика", "mult_money"), ("Другие вычисления", "arith_money"),
+        ("Текстовые задачи", "text_money"), ("Логика", "logic_money"),
+        ("Марафон", "marathon_money"), ("Инженерный спринт", "sprint_money"),
+        ("Задания робота", "robot_money")
+    ]
+    for label, key in labels:
+        amount = int(D.get(key, 0) or 0)
+        st.write(f"**{label}:** {amount:,} сум".replace(",", " "))
     st.subheader("История наград")
-    for item in reversed(D.get("earnings_history", [])):
-        st.write(f"{item.get('date','')} — +{item.get('amount',0)} сум ({item.get('source','')})")
-    st.download_button("Скачать резервную копию накоплений", json.dumps(D, ensure_ascii=False, indent=2), file_name="imron_data_backup.json", mime="application/json")
-    st.caption("Совет: периодически скачивай резервную копию. Локальный JSON на Streamlit Cloud не является гарантированным постоянным хранилищем.")
+    history = D.get("earnings_history", [])
+    if history:
+        for item in reversed(history):
+            st.write(f"{item.get('date', '')} — +{int(item.get('amount', 0) or 0):,} сум ({item.get('source', '')})".replace(",", " "))
+    else:
+        st.info("Пока наград нет. Выполняй задания, чтобы пополнять копилку.")
+    st.download_button("Скачать резервную копию копилки", json.dumps(D, ensure_ascii=False, indent=2), file_name="imron_data_backup.json", mime="application/json")
