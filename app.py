@@ -242,6 +242,19 @@ LESSONS = {
 st.title("🚀 Академия юного инженера — Имрон")
 st.caption("Учись понимать, рассуждать, создавать и проверять свои идеи.")
 sections = ["Математика", "Логика", "Физика и инженерия", "Память и внимание", "Текстовые задачи", "Стратегия", "Творчество", "Развитие мышления", "Марафон 50 вопросов", "Инженерный спринт", "Статистика", "Копилка"]
+
+# Быстрый доступ на главном экране — кнопки видны и на смартфоне.
+st.subheader("Быстрый доступ")
+quick_col1, quick_col2 = st.columns(2)
+with quick_col1:
+    if st.button("📊 Статистика", key="main_open_stats", use_container_width=True):
+        st.session_state["nav_mode"] = "Статистика"
+        st.rerun()
+with quick_col2:
+    if st.button("💰 Копилка", key="main_open_bank", use_container_width=True):
+        st.session_state["nav_mode"] = "Копилка"
+        st.rerun()
+
 if st.sidebar.button("📊 Открыть статистику", use_container_width=True):
     st.session_state["nav_mode"] = "Статистика"
 if st.sidebar.button("💰 Открыть копилку", use_container_width=True):
